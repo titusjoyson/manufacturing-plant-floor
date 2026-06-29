@@ -1,0 +1,16 @@
+{
+  "name": "manufacturing-plant-floor",
+  "version": "1.0.0",
+  "description": "Autonomous Pharmaceutical Manufacturing Simulator — Zoladex PLGA Extrusion Line",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -n apis,sim,client -c blue,green,cyan \"npm run dev:apis\" \"npm run dev:sim\" \"npm run dev:client\"",
+    "dev:apis": "node apis/server.js",
+    "dev:sim": "node factory-simulator/index.js",
+    "dev:client": "npm --prefix client run dev",
+    "install:all": "npm install & npm --prefix shared install & npm --prefix apis install & npm --prefix factory-simulator install & npm --prefix client install"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

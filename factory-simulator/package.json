@@ -1,0 +1,14 @@
+{
+  "name": "@pharma-sim/factory-simulator",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "DES simulation engine for Zoladex manufacturing line",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "name": "@pharma-sim/shared",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Shared constants and types for the pharmaceutical manufacturing simulator",
+  "main": "index.js"
+}
