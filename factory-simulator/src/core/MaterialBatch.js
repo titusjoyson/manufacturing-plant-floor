@@ -162,6 +162,13 @@ export class MaterialBatch {
       yieldPercent: this.yieldPercent,
     };
   }
+
+  static fromJSON(json) {
+    if (!json) return null;
+    const batch = new MaterialBatch(json.batchId, json.orderId, json.batchIndex);
+    Object.assign(batch, json);
+    return batch;
+  }
 }
 
 /** Generate a batch ID from date and campaign index */

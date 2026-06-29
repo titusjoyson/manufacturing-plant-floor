@@ -12,11 +12,13 @@ export class IntegrationEmitters {
    * @param {import('../core/EventBus.js').EventBus} eventBus
    * @param {Function} broadcastFn - Function to broadcast messages to WebSocket clients
    * @param {string} apisBaseUrl - Base URL of the APIs service
+   * @param {import('./MqttBroker.js').MqttBroker} mqttBroker - Optional MQTT broker
    */
-  constructor(eventBus, broadcastFn, apisBaseUrl = 'http://localhost:3001') {
+  constructor(eventBus, broadcastFn, apisBaseUrl = 'http://localhost:3001', mqttBroker = null) {
     this.eventBus = eventBus;
     this.broadcast = broadcastFn;
     this.apisBaseUrl = apisBaseUrl;
+    this.mqtt = mqttBroker;
 
     /** @type {Array<Object>} All integration messages produced */
     this.messageLog = [];
@@ -58,47 +60,71 @@ export class IntegrationEmitters {
   // ── B2MML ──
 
   _emitB2MLProductionSchedule(event) {
+    const data = event.data;
+    const xmlPayload = `
+<ProductionSchedule>
+  <ID>${data.orderId}</ID>
+  <ProductionRequest>
+    <ID>${data.batchId}</ID>
+    <ProductProductionRule>
+      <ProductID>ZOLADEX-3.6MG</ProductID>
+    </ProductProductionRule>
+    <SegmentRequirement>
+      <Quantity>5000</Quantity>
+      <UnitOfMeasure>EA</UnitOfMeasure>
+    </SegmentRequirement>
+    <StartTime>${new Date().toISOString()}</StartTime>
+  </ProductionRequest>
+</ProductionSchedule>`.trim();
+
     const msg = {
       type: INTEGRATION_TYPE.B2MML_PRODUCTION_SCHEDULE,
       protocol: 'B2MML',
       direction: 'ERP → MES',
       timestamp: new Date().toISOString(),
-      payload: {
-        productionSchedule: {
-          orderId: event.data.orderId,
-          batchId: event.data.batchId,
-          productName: 'Zoladex 3.6mg',
-          materialId: 'ZOLADEX-3.6MG',
-          targetQuantity: 5000,
-          uom: 'EA',
-          scheduledStart: new Date().toISOString(),
-        },
-      },
+      payload: xmlPayload,
     };
+    if (this.mqtt) this.mqtt.publish(`zoladex/it/mes/b2mml/schedule/${event.data.batchId}`, msg.payload, true);
     this._record(msg);
   }
 
   _emitB2MLProductionPerformance(event) {
     const batch = event.data.materialBatch;
+    const xmlPayload = `
+<ProductionPerformance>
+  <ID>${batch.batchId}</ID>
+  <ProductionResponse>
+    <ProductionRequestID>${batch.orderId}</ProductionRequestID>
+    <SegmentResponse>
+      <MaterialActual>
+        <MaterialDefinitionID>ZOLADEX-3.6MG</MaterialDefinitionID>
+        <Quantity>${batch.packagedCount}</Quantity>
+        <UnitOfMeasure>EA</UnitOfMeasure>
+      </MaterialActual>
+      <ScrapQuantity>${batch.weightRejected + batch.visionRejected}</ScrapQuantity>
+      <YieldPercent>${batch.yieldPercent}</YieldPercent>
+    </SegmentResponse>
+    <StartTime>${batch.stageHistory[0]?.startTime}</StartTime>
+    <EndTime>${event.data.simTime}</EndTime>
+  </ProductionResponse>
+</ProductionPerformance>`.trim();
+
     const msg = {
       type: INTEGRATION_TYPE.B2MML_PRODUCTION_PERFORMANCE,
       protocol: 'B2MML',
       direction: 'MES → ERP',
       timestamp: new Date().toISOString(),
-      payload: {
-        productionPerformance: {
-          orderId: batch.orderId,
-          batchId: batch.batchId,
-          actualQuantity: batch.packagedCount,
-          scrapQuantity: batch.weightRejected + batch.visionRejected,
-          yieldPercent: batch.yieldPercent,
-          materialsConsumed: batch.rawMaterialLots,
-          startTime: batch.stageHistory[0]?.startTime,
-          endTime: event.data.simTime,
-        },
-      },
+      payload: xmlPayload,
     };
+    if (this.mqtt) this.mqtt.publish(`zoladex/it/mes/b2mml/performance/${batch.batchId}`, msg.payload, true);
     this._record(msg);
+
+    // Also post directly to /api/batches for L4 REST consumption
+    fetch(`${this.apisBaseUrl}/api/batches`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(batch),
+    }).catch(() => {});
   }
 
   // ── MSI ──
@@ -131,6 +157,7 @@ export class IntegrationEmitters {
         stageId: event.data.stageId,
       },
     };
+    if (this.mqtt) this.mqtt.publish(`zoladex/ot/state/${event.data.stageId}`, msg.payload, true);
     this._record(msg);
   }
 
@@ -150,6 +177,7 @@ export class IntegrationEmitters {
         limit: alarm.limit,
       },
     };
+    if (this.mqtt) this.mqtt.publish(`zoladex/ot/alarms/${alarm.unit}`, msg.payload, true);
     this._record(msg);
   }
 
@@ -181,8 +209,20 @@ export class IntegrationEmitters {
         sensors: event.data.sensors,
       },
     };
-    // Don't record every NDATA — too frequent. Only broadcast.
+    if (this.mqtt) {
+      this.mqtt.publish(msg.topic, msg.payload);
+      this.mqtt.publish(`zoladex/ot/telemetry/${event.data.stageId}`, event.data.sensors);
+    }
+    
+    // Broadcast for live UI
     this.broadcast({ type: 'INTEGRATION_MSG', data: msg });
+
+    // Post to /api/telemetry for REST querying (ring-buffered to 50k in server)
+    fetch(`${this.apisBaseUrl}/api/telemetry`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(msg.payload),
+    }).catch(() => {});
   }
 
   _emitSparkplugNDEATH(event) {
@@ -239,6 +279,7 @@ export class IntegrationEmitters {
       timestamp: new Date().toISOString(),
       payload: event.data.step,
     };
+    if (this.mqtt) this.mqtt.publish(`zoladex/it/ebr/steps/${event.data.step.batchId}`, msg.payload, true);
     this._record(msg);
   }
 
@@ -252,6 +293,7 @@ export class IntegrationEmitters {
       timestamp: new Date().toISOString(),
       payload: event.data.sample,
     };
+    if (this.mqtt) this.mqtt.publish(`zoladex/it/lims/samples/${event.data.sample.sampleId}`, msg.payload, true);
     this._record(msg);
   }
 
@@ -263,6 +305,7 @@ export class IntegrationEmitters {
       timestamp: new Date().toISOString(),
       payload: event.data,
     };
+    if (this.mqtt) this.mqtt.publish(`zoladex/it/lims/results/${event.data.sampleId || 'unknown'}`, msg.payload, true);
     this._record(msg);
   }
 
@@ -279,6 +322,7 @@ export class IntegrationEmitters {
         stagingRecords: event.data.stagingRecords,
       },
     };
+    if (this.mqtt) this.mqtt.publish(`zoladex/it/ewm/staging/${event.data.batchId}`, msg.payload, true);
     this._record(msg);
   }
 
@@ -290,6 +334,7 @@ export class IntegrationEmitters {
       timestamp: new Date().toISOString(),
       payload: event.data,
     };
+    if (this.mqtt) this.mqtt.publish(`zoladex/it/qm/decision/${event.data.batchId}`, msg.payload, true);
     this._record(msg);
   }
 

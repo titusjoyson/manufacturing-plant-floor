@@ -4,6 +4,14 @@
  */
 
 import { WebSocketServer } from 'ws';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const SAVE_DIR = path.join(__dirname, 'data');
+const SAVE_PATH = path.join(SAVE_DIR, 'campaign_state.json');
 
 // Core
 import { SimulationClock } from './src/core/SimulationClock.js';
@@ -38,6 +46,7 @@ import { CIPModel } from './src/process/CIPModel.js';
 
 // Emitters
 import { IntegrationEmitters } from './src/emitters/IntegrationEmitters.js';
+import { MqttBroker } from './src/emitters/MqttBroker.js';
 
 // Shared
 import { WS_MSG, FAULT_SCENARIOS } from '../shared/wsProtocol.js';
@@ -95,6 +104,78 @@ const campaignRunner = new CampaignRunner({
   batchCount: 3,
 });
 
+function loadCampaignState() {
+  try {
+    if (fs.existsSync(SAVE_PATH)) {
+      const raw = fs.readFileSync(SAVE_PATH, 'utf8');
+      const state = JSON.parse(raw);
+      
+      clock.simTime = state.clock.simTime;
+      clock.timeScale = state.clock.timeScale;
+      clock.paused = state.clock.paused;
+      clock.running = state.clock.running;
+
+      campaignRunner.importState(state.campaign);
+      console.log(`[Simulator] Active run state recovered from ${SAVE_PATH} (simTime: ${clock.simTime}s, phase: ${campaignRunner.phase})`);
+
+      if (clock.running && !clock.paused) {
+        clock.start();
+      }
+    }
+  } catch (err) {
+    console.error('[Simulator] Error recovering campaign state:', err.message);
+  }
+}
+
+function saveCampaignState() {
+  try {
+    // If not started or already complete, don't persist active run state
+    if (campaignRunner.phase === 'NOT_STARTED' || campaignRunner.phase === 'COMPLETE') return;
+
+    if (!fs.existsSync(SAVE_DIR)) {
+      fs.mkdirSync(SAVE_DIR, { recursive: true });
+    }
+    const state = {
+      clock: {
+        simTime: clock.simTime,
+        timeScale: clock.timeScale,
+        paused: clock.paused,
+        running: clock.running,
+      },
+      campaign: campaignRunner.exportState(),
+    };
+    fs.writeFileSync(SAVE_PATH, JSON.stringify(state, null, 2), 'utf8');
+  } catch (err) {
+    console.error('[Simulator] Error saving campaign state:', err.message);
+  }
+}
+
+function clearCampaignState() {
+  try {
+    if (fs.existsSync(SAVE_PATH)) {
+      fs.unlinkSync(SAVE_PATH);
+      console.log('[Simulator] Persistent campaign state cleared (campaign complete/aborted)');
+    }
+  } catch (err) {
+    console.error('[Simulator] Error clearing campaign state:', err.message);
+  }
+}
+
+// Load campaign state at startup
+loadCampaignState();
+
+// Save state on key campaign transitions
+eventBus.on('CAMPAIGN_STATUS', () => saveCampaignState());
+eventBus.on('BATCH_STARTED', () => saveCampaignState());
+eventBus.on('BATCH_COMPLETED', () => saveCampaignState());
+eventBus.on('STAGE_STARTED', () => saveCampaignState());
+eventBus.on('STAGE_COMPLETED', () => saveCampaignState());
+eventBus.on('FAULT_INJECTED', () => saveCampaignState());
+
+// Clear state when campaign completes or aborts
+eventBus.on('CAMPAIGN_COMPLETE', () => clearCampaignState());
+eventBus.on('CAMPAIGN_ABORTED', () => clearCampaignState());
+
 // ══════════════════════════════════════════
 // WebSocket Server
 // ══════════════════════════════════════════
@@ -110,8 +191,12 @@ function broadcast(message) {
   }
 }
 
-// Integration Emitters (connect to broadcast and APIs)
-const integrationEmitters = new IntegrationEmitters(eventBus, broadcast, APIS_URL);
+// Start MQTT Broker
+const mqttBroker = new MqttBroker(1883);
+mqttBroker.start().catch(console.error);
+
+// Integration Emitters (connect to broadcast, APIs, and MQTT)
+const integrationEmitters = new IntegrationEmitters(eventBus, broadcast, APIS_URL, mqttBroker);
 
 // Wire up event→WebSocket forwarding
 eventBus.on('CAMPAIGN_STATUS', (e) => broadcast({ type: WS_MSG.CAMPAIGN_STATUS, data: e.data }));
@@ -241,6 +326,7 @@ clock.onTick((dt, simTime, tickCount) => {
   // 6. Periodic telemetry broadcast (every 10 ticks = 1 second real time)
   telemetryCounter++;
   if (telemetryCounter % 10 === 0) {
+    saveCampaignState(); // Auto-save state periodically
     broadcast({
       type: WS_MSG.TELEMETRY_UPDATE,
       data: {

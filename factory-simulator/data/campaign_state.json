@@ -1,0 +1,358 @@
+{
+  "clock": {
+    "simTime": 8958,
+    "timeScale": 10,
+    "paused": false,
+    "running": true
+  },
+  "campaign": {
+    "campaignId": "CAMP-1782706023453",
+    "orderId": "PO-MQYP4Z6L",
+    "phase": "BATCH_RUNNING",
+    "currentBatchIndex": 0,
+    "currentStageIndex": 2,
+    "batches": [
+      {
+        "batchId": "ZOL-20260629-001",
+        "orderId": "PO-MQYP4Z6L",
+        "product": {
+          "materialId": "ZOLADEX-3.6MG",
+          "name": "Zoladex 3.6mg Depot Syringe",
+          "ndc": "0310-0950-98",
+          "targetDepotMass": 3.6,
+          "targetDepotDiameter": 1.5
+        },
+        "status": "InProgress",
+        "createdAt": "2026-06-29T04:11:26.675Z",
+        "initialMass": 45.5,
+        "currentMass": 41.089,
+        "apiPotency": 100,
+        "moistureContent": 99.02,
+        "density": 0.3,
+        "strandDiameter": 0,
+        "depotLength": 0,
+        "totalDepots": 0,
+        "visionAccepted": 0,
+        "visionRejected": 0,
+        "weightAccepted": 0,
+        "weightRejected": 0,
+        "packagedCount": 0,
+        "labelPassed": 0,
+        "labelFailed": 0,
+        "cumulativeThermalExposure": 0,
+        "maxTemperatureSeen": 22,
+        "spcDeviations": 0,
+        "deviationCount": 0,
+        "microStoppages": 0,
+        "rawMaterialLots": [
+          {
+            "materialId": "PLGA-POLYMER",
+            "lotNumber": "PLGA-260629-001",
+            "qtyUsed": 45,
+            "uom": "KG"
+          },
+          {
+            "materialId": "GOSERELIN-API",
+            "lotNumber": "GOSE-260629-001",
+            "qtyUsed": 0.5,
+            "uom": "KG"
+          },
+          {
+            "materialId": "ACETIC-ACID",
+            "lotNumber": "ACET-260629-001",
+            "qtyUsed": 30,
+            "uom": "L"
+          },
+          {
+            "materialId": "SYRINGE-14G",
+            "lotNumber": "SYRI-260629-001",
+            "qtyUsed": 5000,
+            "uom": "EA"
+          },
+          {
+            "materialId": "NEEDLE-ASSEMBLY",
+            "lotNumber": "NEED-260629-001",
+            "qtyUsed": 5000,
+            "uom": "EA"
+          },
+          {
+            "materialId": "FOIL-POUCH",
+            "lotNumber": "FOIL-260629-001",
+            "qtyUsed": 5000,
+            "uom": "EA"
+          },
+          {
+            "materialId": "DESICCANT-SACHET",
+            "lotNumber": "DESI-260629-001",
+            "qtyUsed": 5000,
+            "uom": "EA"
+          },
+          {
+            "materialId": "LABEL-ROLL",
+            "lotNumber": "LABE-260629-001",
+            "qtyUsed": 5200,
+            "uom": "EA"
+          }
+        ],
+        "stageHistory": [
+          {
+            "stageId": "SOLUTION_PREP",
+            "stageName": "Solution Preparation & Filtration",
+            "startTime": 1800,
+            "endTime": 4500,
+            "entryProperties": {
+              "mass": 45.5,
+              "apiPotency": 100,
+              "moistureContent": 100,
+              "temperature": 22,
+              "density": 0.3,
+              "strandDiameter": 0,
+              "totalDepots": 0,
+              "weightAccepted": 0,
+              "weightRejected": 0,
+              "packagedCount": 0
+            },
+            "exitProperties": {
+              "mass": 45.5,
+              "apiPotency": 100,
+              "moistureContent": 100,
+              "temperature": 22.8,
+              "density": 0.3,
+              "strandDiameter": 0,
+              "totalDepots": 0,
+              "weightAccepted": 0,
+              "weightRejected": 0,
+              "packagedCount": 0
+            }
+          },
+          {
+            "stageId": "DRUM_FREEZING",
+            "stageName": "Drum Freezing",
+            "startTime": 4500,
+            "endTime": 8100,
+            "entryProperties": {
+              "mass": 45.5,
+              "apiPotency": 100,
+              "moistureContent": 100,
+              "temperature": 22.8,
+              "density": 0.3,
+              "strandDiameter": 0,
+              "totalDepots": 0,
+              "weightAccepted": 0,
+              "weightRejected": 0,
+              "packagedCount": 0
+            },
+            "exitProperties": {
+              "mass": 41.9,
+              "apiPotency": 100,
+              "moistureContent": 100,
+              "temperature": -60,
+              "density": 0.3,
+              "strandDiameter": 0,
+              "totalDepots": 0,
+              "weightAccepted": 0,
+              "weightRejected": 0,
+              "packagedCount": 0
+            }
+          },
+          {
+            "stageId": "LYOPHILIZATION",
+            "stageName": "Lyophilization (Freeze Drying)",
+            "startTime": 8100,
+            "endTime": null,
+            "entryProperties": {
+              "mass": 41.9,
+              "apiPotency": 100,
+              "moistureContent": 100,
+              "temperature": -60,
+              "density": 0.3,
+              "strandDiameter": 0,
+              "totalDepots": 0,
+              "weightAccepted": 0,
+              "weightRejected": 0,
+              "packagedCount": 0
+            },
+            "exitProperties": null
+          }
+        ],
+        "theoreticalYield": 0,
+        "actualYield": 0,
+        "yieldPercent": 0
+      }
+    ],
+    "activeBatch": {
+      "batchId": "ZOL-20260629-001",
+      "orderId": "PO-MQYP4Z6L",
+      "product": {
+        "materialId": "ZOLADEX-3.6MG",
+        "name": "Zoladex 3.6mg Depot Syringe",
+        "ndc": "0310-0950-98",
+        "targetDepotMass": 3.6,
+        "targetDepotDiameter": 1.5
+      },
+      "status": "InProgress",
+      "createdAt": "2026-06-29T04:11:26.675Z",
+      "initialMass": 45.5,
+      "currentMass": 41.089,
+      "apiPotency": 100,
+      "moistureContent": 99.02,
+      "density": 0.3,
+      "strandDiameter": 0,
+      "depotLength": 0,
+      "totalDepots": 0,
+      "visionAccepted": 0,
+      "visionRejected": 0,
+      "weightAccepted": 0,
+      "weightRejected": 0,
+      "packagedCount": 0,
+      "labelPassed": 0,
+      "labelFailed": 0,
+      "cumulativeThermalExposure": 0,
+      "maxTemperatureSeen": 22,
+      "spcDeviations": 0,
+      "deviationCount": 0,
+      "microStoppages": 0,
+      "rawMaterialLots": [
+        {
+          "materialId": "PLGA-POLYMER",
+          "lotNumber": "PLGA-260629-001",
+          "qtyUsed": 45,
+          "uom": "KG"
+        },
+        {
+          "materialId": "GOSERELIN-API",
+          "lotNumber": "GOSE-260629-001",
+          "qtyUsed": 0.5,
+          "uom": "KG"
+        },
+        {
+          "materialId": "ACETIC-ACID",
+          "lotNumber": "ACET-260629-001",
+          "qtyUsed": 30,
+          "uom": "L"
+        },
+        {
+          "materialId": "SYRINGE-14G",
+          "lotNumber": "SYRI-260629-001",
+          "qtyUsed": 5000,
+          "uom": "EA"
+        },
+        {
+          "materialId": "NEEDLE-ASSEMBLY",
+          "lotNumber": "NEED-260629-001",
+          "qtyUsed": 5000,
+          "uom": "EA"
+        },
+        {
+          "materialId": "FOIL-POUCH",
+          "lotNumber": "FOIL-260629-001",
+          "qtyUsed": 5000,
+          "uom": "EA"
+        },
+        {
+          "materialId": "DESICCANT-SACHET",
+          "lotNumber": "DESI-260629-001",
+          "qtyUsed": 5000,
+          "uom": "EA"
+        },
+        {
+          "materialId": "LABEL-ROLL",
+          "lotNumber": "LABE-260629-001",
+          "qtyUsed": 5200,
+          "uom": "EA"
+        }
+      ],
+      "stageHistory": [
+        {
+          "stageId": "SOLUTION_PREP",
+          "stageName": "Solution Preparation & Filtration",
+          "startTime": 1800,
+          "endTime": 4500,
+          "entryProperties": {
+            "mass": 45.5,
+            "apiPotency": 100,
+            "moistureContent": 100,
+            "temperature": 22,
+            "density": 0.3,
+            "strandDiameter": 0,
+            "totalDepots": 0,
+            "weightAccepted": 0,
+            "weightRejected": 0,
+            "packagedCount": 0
+          },
+          "exitProperties": {
+            "mass": 45.5,
+            "apiPotency": 100,
+            "moistureContent": 100,
+            "temperature": 22.8,
+            "density": 0.3,
+            "strandDiameter": 0,
+            "totalDepots": 0,
+            "weightAccepted": 0,
+            "weightRejected": 0,
+            "packagedCount": 0
+          }
+        },
+        {
+          "stageId": "DRUM_FREEZING",
+          "stageName": "Drum Freezing",
+          "startTime": 4500,
+          "endTime": 8100,
+          "entryProperties": {
+            "mass": 45.5,
+            "apiPotency": 100,
+            "moistureContent": 100,
+            "temperature": 22.8,
+            "density": 0.3,
+            "strandDiameter": 0,
+            "totalDepots": 0,
+            "weightAccepted": 0,
+            "weightRejected": 0,
+            "packagedCount": 0
+          },
+          "exitProperties": {
+            "mass": 41.9,
+            "apiPotency": 100,
+            "moistureContent": 100,
+            "temperature": -60,
+            "density": 0.3,
+            "strandDiameter": 0,
+            "totalDepots": 0,
+            "weightAccepted": 0,
+            "weightRejected": 0,
+            "packagedCount": 0
+          }
+        },
+        {
+          "stageId": "LYOPHILIZATION",
+          "stageName": "Lyophilization (Freeze Drying)",
+          "startTime": 8100,
+          "endTime": null,
+          "entryProperties": {
+            "mass": 41.9,
+            "apiPotency": 100,
+            "moistureContent": 100,
+            "temperature": -60,
+            "density": 0.3,
+            "strandDiameter": 0,
+            "totalDepots": 0,
+            "weightAccepted": 0,
+            "weightRejected": 0,
+            "packagedCount": 0
+          },
+          "exitProperties": null
+        }
+      ],
+      "theoreticalYield": 0,
+      "actualYield": 0,
+      "yieldPercent": 0
+    },
+    "processOrderStatus": "Started",
+    "phaseElapsed": 7158,
+    "phaseDuration": 0,
+    "stageElapsed": 858,
+    "stageDuration": 86400,
+    "totalElapsed": 8958,
+    "aborted": false
+  }
+}

@@ -6,6 +6,7 @@
 import { STAGES, STAGE_ORDER } from '../../../shared/stages.js';
 import { PROCESS_ORDER_STATUS } from '../../../shared/ebrStepTypes.js';
 import { MaterialBatch, generateBatchId } from './MaterialBatch.js';
+import { PACKML_STATE } from '../../../shared/packmlStates.js';
 
 /** Campaign phases */
 const CAMPAIGN_PHASE = {
@@ -234,6 +235,12 @@ export class CampaignRunner {
     });
 
     console.log(`  [Stage ${this.currentStageIndex + 1}/9] ${stage.shortName} started`);
+
+    const unit = this.plantFloor.getUnit(stageId);
+    if (unit) {
+      unit.state = PACKML_STATE.IDLE;
+      unit.transitionTo(PACKML_STATE.STARTING, simTime);
+    }
   }
 
   _completeCurrentStage(simTime) {
@@ -252,6 +259,11 @@ export class CampaignRunner {
     });
 
     console.log(`  [Stage ${this.currentStageIndex + 1}/9] ${stage.shortName} completed`);
+
+    const unit = this.plantFloor.getUnit(stageId);
+    if (unit) {
+      unit.transitionTo(PACKML_STATE.COMPLETING, simTime);
+    }
   }
 
   _completeBatch(simTime) {
@@ -296,10 +308,32 @@ export class CampaignRunner {
   injectFault(fault) {
     this.activeFaults.set(fault.id, fault);
     this.eventBus.emit('FAULT_INJECTED', { fault });
+
+    const stageId = fault.affectedStage;
+    if (stageId && stageId !== 'ENVIRONMENT') {
+      const unit = this.plantFloor.getUnit(stageId);
+      if (unit && unit.state === PACKML_STATE.EXECUTE) {
+        if (fault.id === 'ASEPTIC_BREACH') {
+          unit.transitionTo(PACKML_STATE.ABORTING, this.totalElapsed);
+        } else {
+          unit.transitionTo(PACKML_STATE.HOLDING, this.totalElapsed);
+        }
+      }
+    }
     console.log(`[Campaign] Fault injected: ${fault.name}`);
   }
 
   clearFault(faultId) {
+    const fault = this.activeFaults.get(faultId);
+    if (fault) {
+      const stageId = fault.affectedStage;
+      if (stageId && stageId !== 'ENVIRONMENT') {
+        const unit = this.plantFloor.getUnit(stageId);
+        if (unit && unit.state === PACKML_STATE.HELD) {
+          unit.transitionTo(PACKML_STATE.UNHOLDING, this.totalElapsed);
+        }
+      }
+    }
     this.activeFaults.delete(faultId);
   }
 
@@ -313,10 +347,56 @@ export class CampaignRunner {
       simTime,
       batchesCompleted: this.batches.filter(b => b.status === 'Complete').length,
     });
+
+    // Transition active stage unit to Aborting
+    if (this.currentStageIndex >= 0 && this.currentStageIndex < STAGE_ORDER.length) {
+      const stageId = STAGE_ORDER[this.currentStageIndex];
+      const unit = this.plantFloor.getUnit(stageId);
+      if (unit && (unit.state === PACKML_STATE.EXECUTE || unit.state === PACKML_STATE.HELD)) {
+        unit.transitionTo(PACKML_STATE.ABORTING, simTime);
+      }
+    }
     console.log(`[Campaign] ABORTED: ${reason}`);
   }
 
   /** Get full campaign status for client sync. */
+  exportState() {
+    return {
+      campaignId: this.campaignId,
+      orderId: this.orderId,
+      phase: this.phase,
+      currentBatchIndex: this.currentBatchIndex,
+      currentStageIndex: this.currentStageIndex,
+      batches: this.batches.map(b => b.toJSON()),
+      activeBatch: this.activeBatch ? this.activeBatch.toJSON() : null,
+      processOrderStatus: this.processOrderStatus,
+      phaseElapsed: this.phaseElapsed,
+      phaseDuration: this.phaseDuration,
+      stageElapsed: this.stageElapsed,
+      stageDuration: this.stageDuration,
+      totalElapsed: this.totalElapsed,
+      aborted: this.aborted,
+    };
+  }
+
+  importState(state) {
+    if (!state) return;
+    this.campaignId = state.campaignId;
+    this.orderId = state.orderId;
+    this.phase = state.phase;
+    this.currentBatchIndex = state.currentBatchIndex;
+    this.currentStageIndex = state.currentStageIndex;
+    this.batches = (state.batches || []).map(bJson => MaterialBatch.fromJSON(bJson));
+    this.activeBatch = MaterialBatch.fromJSON(state.activeBatch);
+    this.processOrderStatus = state.processOrderStatus;
+    this.phaseElapsed = state.phaseElapsed;
+    this.phaseDuration = state.phaseDuration;
+    this.stageElapsed = state.stageElapsed;
+    this.stageDuration = state.stageDuration;
+    this.totalElapsed = state.totalElapsed;
+    this.aborted = state.aborted;
+  }
+
   getStatus() {
     return {
       campaignId: this.campaignId,

@@ -485,3 +485,75 @@ h3 { font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-sp
   min-width: 40px;
   text-align: center;
 }
+
+/* ── Database Explorer Classes ── */
+.explorer-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.7rem;
+  text-align: left;
+}
+
+.explorer-table th {
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--surface-border);
+}
+
+.explorer-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 300px;
+}
+
+.explorer-table tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.explorer-table tr.selected td {
+  background: rgba(0, 255, 204, 0.05);
+  color: var(--accent-cyan);
+  border-bottom: 1px solid var(--accent-cyan-dim);
+}
+
+.explorer-input {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid var(--surface-border);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 0.65rem;
+  padding: 6px 10px;
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+
+.explorer-input:focus {
+  border-color: var(--accent-cyan);
+}
+
+.explorer-select {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--surface-border);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 0.65rem;
+  padding: 6px 10px;
+  outline: none;
+  cursor: pointer;
+}
+
+.explorer-select:focus {
+  border-color: var(--accent-cyan);
+}
+

@@ -8,6 +8,14 @@
 
 import express from 'express';
 import cors from 'cors';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const STORE_DIR = path.join(__dirname, 'data');
+const STORE_PATH = path.join(STORE_DIR, 'store.json');
 
 const app = express();
 const PORT = parseInt(process.env.API_PORT || '3001');
@@ -16,7 +24,7 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
 // ══════════════════════════════════════════
-// In-Memory Stores (Data Recorder pattern)
+// In-Memory & Local File Store
 // ══════════════════════════════════════════
 
 const stores = {
@@ -35,6 +43,52 @@ const stores = {
 const MAX_TELEMETRY = 50000;  // Ring buffer for telemetry
 const MAX_MESSAGES = 10000;
 
+function loadStore() {
+  try {
+    if (fs.existsSync(STORE_PATH)) {
+      const raw = fs.readFileSync(STORE_PATH, 'utf8');
+      const loaded = JSON.parse(raw);
+      Object.keys(stores).forEach(key => {
+        if (Array.isArray(loaded[key])) {
+          stores[key] = loaded[key];
+        }
+      });
+      console.log(`[DB] Loaded state from ${STORE_PATH}`);
+    }
+  } catch (err) {
+    console.error('[DB] Error loading state:', err.message);
+  }
+}
+
+let saveTimeout = null;
+function triggerSave() {
+  if (saveTimeout) return;
+  saveTimeout = setTimeout(() => {
+    saveTimeout = null;
+    saveStore();
+  }, 2000); // Debounce write at max once every 2 seconds
+}
+
+function saveStore() {
+  try {
+    if (!fs.existsSync(STORE_DIR)) {
+      fs.mkdirSync(STORE_DIR, { recursive: true });
+    }
+    // Limit telemetry/message sizes stored on disk to prevent bloated files
+    const serialized = {
+      ...stores,
+      telemetry: stores.telemetry.slice(-1000),
+      messages: stores.messages.slice(-5000),
+    };
+    fs.writeFileSync(STORE_PATH, JSON.stringify(serialized, null, 2), 'utf8');
+  } catch (err) {
+    console.error('[DB] Error saving state:', err.message);
+  }
+}
+
+// Load database state at startup
+loadStore();
+
 // ══════════════════════════════════════════
 // Data Recording Endpoints (POST)
 // ══════════════════════════════════════════
@@ -49,6 +103,7 @@ app.post('/api/messages', (req, res) => {
 
   // Route to specific stores based on message type
   routeMessage(msg);
+  triggerSave();
 
   res.status(201).json({ status: 'recorded', id: stores.messages.length - 1 });
 });
@@ -56,6 +111,7 @@ app.post('/api/messages', (req, res) => {
 /** Record a batch completion */
 app.post('/api/batches', (req, res) => {
   stores.batches.push({ ...req.body, recordedAt: new Date().toISOString() });
+  triggerSave();
   res.status(201).json({ status: 'recorded' });
 });
 
@@ -65,13 +121,31 @@ app.post('/api/telemetry', (req, res) => {
   if (stores.telemetry.length > MAX_TELEMETRY) {
     stores.telemetry = stores.telemetry.slice(-MAX_TELEMETRY / 2);
   }
+  triggerSave();
   res.status(201).json({ status: 'recorded' });
 });
 
 /** Record alarm */
 app.post('/api/alarms', (req, res) => {
   stores.alarms.push({ ...req.body, recordedAt: new Date().toISOString() });
+  triggerSave();
   res.status(201).json({ status: 'recorded' });
+});
+
+/** Reset all database stores */
+app.post('/api/reset', (req, res) => {
+  Object.keys(stores).forEach(key => {
+    stores[key] = [];
+  });
+  try {
+    if (fs.existsSync(STORE_PATH)) {
+      fs.unlinkSync(STORE_PATH);
+    }
+    console.log('[DB] Database reset and store file deleted');
+  } catch (err) {
+    console.error('[DB] Error resetting database file:', err.message);
+  }
+  res.json({ status: 'reset' });
 });
 
 // ══════════════════════════════════════════
