@@ -1,6 +1,6 @@
 {
   "clock": {
-    "simTime": 8958,
+    "simTime": 9938,
     "timeScale": 10,
     "paused": false,
     "running": true
@@ -193,9 +193,9 @@
       "status": "InProgress",
       "createdAt": "2026-06-29T04:11:26.675Z",
       "initialMass": 45.5,
-      "currentMass": 41.089,
+      "currentMass": 40.16,
       "apiPotency": 100,
-      "moistureContent": 99.02,
+      "moistureContent": 96.93,
       "density": 0.3,
       "strandDiameter": 0,
       "depotLength": 0,
@@ -348,11 +348,11 @@
       "yieldPercent": 0
     },
     "processOrderStatus": "Started",
-    "phaseElapsed": 7158,
+    "phaseElapsed": 8138,
     "phaseDuration": 0,
-    "stageElapsed": 858,
+    "stageElapsed": 1838,
     "stageDuration": 86400,
-    "totalElapsed": 8958,
+    "totalElapsed": 9938,
     "aborted": false
   }
 }

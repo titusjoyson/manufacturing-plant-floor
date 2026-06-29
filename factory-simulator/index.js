@@ -50,6 +50,7 @@ import { MqttBroker } from './src/emitters/MqttBroker.js';
 
 // Shared
 import { WS_MSG, FAULT_SCENARIOS } from '../shared/wsProtocol.js';
+import { STAGES, STAGE_ORDER } from '../shared/stages.js';
 
 // ══════════════════════════════════════════
 // Configuration
@@ -113,12 +114,35 @@ function loadCampaignState() {
       clock.simTime = state.clock.simTime;
       clock.timeScale = state.clock.timeScale;
       clock.paused = state.clock.paused;
-      clock.running = state.clock.running;
+      const wasRunning = state.clock.running;
+      clock.running = false; // Reset to false so clock.start() can start the interval
 
       campaignRunner.importState(state.campaign);
       console.log(`[Simulator] Active run state recovered from ${SAVE_PATH} (simTime: ${clock.simTime}s, phase: ${campaignRunner.phase})`);
 
-      if (clock.running && !clock.paused) {
+      // If campaign has started, bring units online and sync states
+      if (campaignRunner.phase !== 'NOT_STARTED' && campaignRunner.phase !== 'COMPLETE') {
+        plantFloor.bringAllOnline(clock.simTime);
+        
+        // Restore active stage process model and equipment unit state
+        if (campaignRunner.currentStageIndex >= 0) {
+          const stageId = STAGE_ORDER[campaignRunner.currentStageIndex];
+          const model = processModels[stageId];
+          const stage = STAGES[stageId];
+          
+          if (model && campaignRunner.activeBatch) {
+            model.initialize(campaignRunner.activeBatch, stage);
+            model.elapsed = campaignRunner.stageElapsed; 
+          }
+          
+          const unit = plantFloor.getUnit(stageId);
+          if (unit) {
+            unit.state = 'Execute';
+          }
+        }
+      }
+
+      if (wasRunning && !clock.paused) {
         clock.start();
       }
     }

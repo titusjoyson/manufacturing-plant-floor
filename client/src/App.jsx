@@ -16,6 +16,7 @@ import EnvironmentMonitor from './components/EnvironmentMonitor';
 
 import DataRelationsDashboard from './components/DataRelationsDashboard';
 import DatabaseExplorer from './components/DatabaseExplorer';
+import BatchOEEPanel from './components/BatchOEEPanel';
 
 export default function App() {
   const sim = useSimulation();
@@ -176,7 +177,8 @@ export default function App() {
             { id: 'control', label: '⚙ Control' },
             { id: 'inspect', label: '🔍 Inspect' },
             { id: 'humans', label: '👤 Humans' },
-            { id: 'messages', label: '📡 IT/OT/ET Data' },
+            { id: 'oee', label: '📊 OEE' },
+            { id: 'messages', label: '📡 Data' },
           ].map(tab => (
             <button
               key={tab.id}
@@ -187,8 +189,8 @@ export default function App() {
                 border: 'none',
                 borderBottom: sidebarTab === tab.id ? '2px solid var(--accent-cyan)' : '2px solid transparent',
                 background: sidebarTab === tab.id ? 'var(--bg-glass)' : 'transparent',
-                fontSize: '0.65rem',
-                padding: '8px 4px',
+                fontSize: '0.62rem',
+                padding: '8px 2px',
               }}
               onClick={() => handleSetSidebarTab(tab.id)}
             >
@@ -227,6 +229,14 @@ export default function App() {
             <HumanOperations
               ebrSteps={sim.ebrSteps}
               humanActions={sim.humanActions}
+            />
+          )}
+
+          {sidebarTab === 'oee' && (
+            <BatchOEEPanel
+              campaign={sim.campaign}
+              clock={sim.clock}
+              alarms={sim.alarms}
             />
           )}
 
